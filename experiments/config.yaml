@@ -2,7 +2,7 @@ trainer:
   max_epochs: 1000
   #fast_dev_run: 5
   default_root_dir: "workdir"
-  batch_size: 1
+  batch_size: 16
   accelerator: "gpu"
   gradient_clip_val: 0.01
 
@@ -44,9 +44,10 @@ datasets:
   resolution: 500000
   columns: ["hic", "meth_cg_500k", "cluster"]
   test_clusters: [1, 2]
-  contact_percentile: 50
+  contact_percentile: 0.80
   k_hop: 5
   n_graphs: 10000
+  graph_path: "graphs.pkl"
 
 
 optimization:

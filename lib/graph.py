@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 
 from torch_geometric.data import Data
+from torch_geometric.utils import to_undirected
 
 
 def read_hic_graph(meth_path, hic_path, resolution=50000):
@@ -46,12 +47,12 @@ def get_pyg_graph(hic, cell):
                   [i[1] for i in edge_index]]
     edge_index = torch.tensor(edge_index).long()
     edge_attr = torch.tensor(hic["contact"].values)
+    edge_index, edge_attr = to_undirected(edge_index, edge_attr, reduce="mean")
 
     met = torch.tensor(cell["methylated_read_count"].values.astype(float))
     tot = torch.tensor(cell["total_read_count"].values.astype(float))
     met[tot != 0] = met[tot != 0] / tot[tot != 0]
     x = torch.arange(len(met)).view(-1, 1)
-    edge_index = torch.cat([edge_index, edge_index[[1, 0]]], dim=-1)
     graph = Data(edge_index=edge_index,
                  edge_attr=edge_attr,
                  x=x, y=met.float())
@@ -66,7 +67,7 @@ def read_dataframe(df, hic_path, sc_path, resolution=50000, percentile=50):
         for hic, sc in zip(selected.iloc[:, -0], selected.iloc[:, 1]):
             data.append(read_hic_graph(f"{sc_path}/{sc}", f"{hic_path}/{hic}", resolution))
         g = join_graphs(data)
-        threshold = np.percentile(g[0]["contact"], 50)
+        threshold = np.percentile(g[0]["contact"], percentile)
         hic = g[0][g[0]["contact"] > threshold]
         graphs[i] = get_pyg_graph(hic, g[1])
     return graphs

@@ -29,7 +29,7 @@ class Criterion(nn.Module):
         return loss
 
 
-class LitMoleculePropertyPredictor(pl.LightningModule):
+class LitNodePredictor(pl.LightningModule):
     def __init__(self, network_module, network_params, criterion, optimizer_module,
                  optimizer_params, scheduler_module, scheduler_params, metrics):
         super().__init__()

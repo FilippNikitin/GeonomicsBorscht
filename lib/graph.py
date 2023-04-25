@@ -1,7 +1,8 @@
+from multiprocessing import Pool
+
 import numpy as np
 import pandas as pd
 import torch
-
 from torch_geometric.data import Data
 from torch_geometric.utils import to_undirected
 
@@ -59,18 +60,22 @@ def get_pyg_graph(hic, cell):
     return graph
 
 
+def process_df(selected, hic_path, sc_path, resolution=50000, percentile=50):
+    data = []
+    for hic, sc in zip(selected.iloc[:, -0], selected.iloc[:, 1]):
+        data.append(read_hic_graph(f"{sc_path}/{sc}", f"{hic_path}/{hic}", resolution))
+    g = join_graphs(data)
+    threshold = np.percentile(g[0]["contact"], percentile)
+    hic = g[0][g[0]["contact"] > threshold]
+    return get_pyg_graph(hic, g[1])
+
+
 def read_dataframe(df, hic_path, sc_path, resolution=50000, percentile=50):
-    graphs = {}
-    for i in pd.unique(df.iloc[:, -1]):
-        selected = df[df.iloc[:, -1] == i]
-        data = []
-        for hic, sc in zip(selected.iloc[:, -0], selected.iloc[:, 1]):
-            data.append(read_hic_graph(f"{sc_path}/{sc}", f"{hic_path}/{hic}", resolution))
-        g = join_graphs(data)
-        threshold = np.percentile(g[0]["contact"], percentile)
-        hic = g[0][g[0]["contact"] > threshold]
-        graphs[i] = get_pyg_graph(hic, g[1])
-    return graphs
+    dfs = [df[df.iloc[:, -1] == i] for i in sorted(pd.unique(df.iloc[:, -1]))]
+    pool = Pool()
+    process = lambda x: process_df(x, hic_path, sc_path, resolution, percentile)
+    graphs = pool.map(process, dfs)
+    return dict(zip(sorted(pd.unique(df.iloc[:, -1])), graphs))
 
 
 if __name__ == "__main__":
@@ -80,4 +85,3 @@ if __name__ == "__main__":
     hic, cell = join_graphs([[hic, cell], [hic, cell]])
     pyg = get_pyg_graph(hic, cell)
     print(pyg)
-

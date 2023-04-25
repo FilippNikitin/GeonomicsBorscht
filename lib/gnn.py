@@ -20,9 +20,10 @@ class Embedding(nn.Module):
 
 
 class GCNN(nn.Module):
-    def __init__(self, h_dim, num_layers):
+    def __init__(self, in_chan, h_dim, num_layers):
         super(GCNN, self).__init__()
-        module_list = [GCNConv(h_dim, h_dim) for _ in range(num_layers)]
+        module_list = [GCNConv(h_dim, h_dim) if i > 0 else GCNConv(in_chan, h_dim)
+                       for i in range(num_layers)]
         self.module_list = nn.ModuleList(module_list)
         self.activation = nn.ReLU()
 
@@ -52,15 +53,16 @@ class FCNN(nn.Module):
 class NodePredictor(nn.Module):
     def __init__(self,
             feat_ranges,
-            h_dims,
+            embed_sizes,
+            h_dim,
             num_conv_layers=6,
             num_fcn_layers=1,
             output_size=5):
         super(NodePredictor, self).__init__()
-        self.h_dim = sum(h_dims)
-        self.embed = Embedding(feat_ranges, h_dims)
-        self.gcn = GCNN(self.h_dim, num_conv_layers)
-        self.fcnn = FCNN(self.h_dim, output_size, num_fcn_layers)
+        in_chan = sum(embed_sizes)
+        self.embed = Embedding(feat_ranges, embed_sizes)
+        self.gcn = GCNN(in_chan, h_dim, num_conv_layers)
+        self.fcnn = FCNN(h_dim, output_size, num_fcn_layers)
 
     def forward(self, batch):
         x = self.embed(batch.x)
@@ -95,5 +97,5 @@ if __name__ == "__main__":
     loader = DataLoader(data_list, batch_size=2)
     batch = next(iter(loader))
 
-    model = NodePredictor([[0, 55], ], [8, ], 2)
+    model = NodePredictor([[0, 55], ], [8, ], 16,  2)
     print(model(batch).shape)

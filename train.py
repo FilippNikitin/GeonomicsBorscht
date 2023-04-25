@@ -1,8 +1,8 @@
 import os.path
+import pickle
 from argparse import ArgumentParser
 
 import pandas as pd
-import pickle
 import wandb
 import yaml
 from lightning import Trainer
@@ -35,19 +35,21 @@ if __name__ == "__main__":
                              optimizer_module, optimizer_params, scheduler_module,
                              scheduler_params, metrics)
     df = pd.read_csv(dataset["clustering_file"])
-    df = df.loc[:, dataset["columns"]]
+    df = df.loc[:300, dataset["columns"]]
     if os.path.exists(dataset["graph_path"]):
         graphs = pickle.load(open(dataset["graph_path"], "rb"))
     else:
         graphs = read_dataframe(df, dataset["hic_path"], dataset["met_path"],
-                            dataset["resolution"], dataset["contact_percentile"])
+                                dataset["resolution"])
         pickle.dump(graphs, open(dataset["graph_path"], "wb"))
 
     test_dataset = GraphDataset({i: graphs[i] for i in dataset["test_clusters"]},
-                                k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"])
+                                k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"],
+                                quantile=dataset["contact_quantile"])
     train_dataset = GraphDataset(
         {i: graphs[i] for i in graphs if i not in dataset["test_clusters"]},
-        k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"])
+        k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"],
+        quantile=dataset["contact_quantile"])
 
     train_loader = DataLoader(train_dataset, batch_size=config_dict["trainer"]["batch_size"],
                               num_workers=8, pin_memory=True)

@@ -89,7 +89,6 @@ if __name__ == "__main__":
 
     x_t = torch.randint(10, 12, (4, 1))  # 4 nodes.
 
-
     gs = Data(x_s, edge_index_s, y=torch.tensor(0.1))
     gt = Data(x_t, edge_index_t, y=torch.tensor(0.3))
     data_list = [gt, gs]
@@ -97,5 +96,5 @@ if __name__ == "__main__":
     loader = DataLoader(data_list, batch_size=2)
     batch = next(iter(loader))
 
-    model = NodePredictor([[0, 55], ], [8, ], 16,  2)
+    model = NodePredictor([[0, 55], ], [8, ], 16, 2)
     print(model(batch).shape)

@@ -14,9 +14,9 @@ wandb:
 model:
   module_name: NodePredictor
   params:
-    embed_sizes: [32, ]
-    h_dim: 64,
-    feat_ranges: [[0, 5257], ]
+    embed_sizes: [ 32, ]
+    h_dim: 64
+    feat_ranges: [ [ 0, 5257 ], ]
     num_conv_layers: 4
     num_fcn_layers: 2
     output_size: 1
@@ -40,14 +40,14 @@ criterion:
 datasets:
   hic_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/hic"
   met_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/methyl/500kb"
-  clustering_file: "files_to_clusters.csv"
+  clustering_file: "./data/files_to_clusters_new.csv"
   resolution: 500000
-  columns: ["hic", "meth_cg_500k", "cluster"]
-  test_clusters: [1, 2]
-  contact_percentile: 0.80
+  columns: [ "hic", "meth_cg_500k", "cluster_label" ]
+  test_clusters: [ "DG", "MGC" ]
+  contact_quantile: 0.5
   k_hop: 10
   n_graphs: 10000
-  graph_path: "random_graphs.pkl"
+  graph_path: "graphs_new_clustering.pkl"
 
 optimization:
   optimizer_module_name: torch.optim.Adam

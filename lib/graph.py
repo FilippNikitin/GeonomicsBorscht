@@ -60,21 +60,22 @@ def get_pyg_graph(hic, cell):
     return graph
 
 
-def process_df(selected, hic_path, sc_path, resolution=50000, percentile=50):
+def process_df(args):
     data = []
+    selected, hic_path, sc_path, resolution = args
     for hic, sc in zip(selected.iloc[:, -0], selected.iloc[:, 1]):
         data.append(read_hic_graph(f"{sc_path}/{sc}", f"{hic_path}/{hic}", resolution))
     g = join_graphs(data)
-    threshold = np.percentile(g[0]["contact"], percentile)
-    hic = g[0][g[0]["contact"] > threshold]
-    return get_pyg_graph(hic, g[1])
+    # threshold = np.percentile(g[0]["contact"], percentile)
+    # hic = g[0][g[0]["contact"] > threshold]
+    return get_pyg_graph(*g)
 
 
-def read_dataframe(df, hic_path, sc_path, resolution=50000, percentile=50):
+def read_dataframe(df, hic_path, sc_path, resolution=50000):
     dfs = [df[df.iloc[:, -1] == i] for i in sorted(pd.unique(df.iloc[:, -1]))]
     pool = Pool()
-    process = lambda x: process_df(x, hic_path, sc_path, resolution, percentile)
-    graphs = pool.map(process, dfs)
+    args = [[i, hic_path, sc_path, resolution] for i in dfs]
+    graphs = pool.map(process_df, args)
     return dict(zip(sorted(pd.unique(df.iloc[:, -1])), graphs))
 
 

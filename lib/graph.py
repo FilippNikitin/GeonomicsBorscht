@@ -69,8 +69,8 @@ def read_dataframe(df, hic_path, sc_path, resolution=50000):
 
 
 if __name__ == "__main__":
-    hic_path = "../GSM4736679_191216-CEMBA-mm-P56-CEMBA191126-9J-1-CEMBA191126-9J-2-A10_ad010_hic.txt"
-    met_path = "../GSM4736679_allc_191216-CEMBA-mm-P56-CEMBA191126-9J-1-CEMBA191126-9J-2-A10_ad010.tsv.gz_cg_final"
+    hic_path = "../data/GSM4736679_191216-CEMBA-mm-P56-CEMBA191126-9J-1-CEMBA191126-9J-2-A10_ad010_hic.txt"
+    met_path = "../data/GSM4736679_allc_191216-CEMBA-mm-P56-CEMBA191126-9J-1-CEMBA191126-9J-2-A10_ad010.tsv.gz_cg_final"
     hic, cell = read_hic_graph(met_path, hic_path)
     hic, cell = join_graphs([[hic, cell], [hic, cell]])
     pyg = get_pyg_graph(hic, cell)

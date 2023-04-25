@@ -71,6 +71,7 @@ class LitNodePredictor(pl.LightningModule):
         result = {}
         output = self.network(batch)
         for metric_name in self.metrics:
+            print(output, print(batch))
             result[metric_name] = self.metrics[metric_name](output, batch.y)
         self.validation_step_outputs.append(result)
         return result

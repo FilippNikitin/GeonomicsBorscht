@@ -2,7 +2,7 @@ trainer:
   max_epochs: 1000
   #fast_dev_run: 5
   default_root_dir: "workdir"
-  batch_size: 64
+  batch_size: 4
   accelerator: "gpu"
   gradient_clip_val: 0.01
 
@@ -16,30 +16,31 @@ model:
   module_name: NodePredictor
   params:
     h_dims: [64, ]
-    feat_ranges: [[0, 10000], ]
+    feat_ranges: [[0, 5257], ]
     num_conv_layers: 10
     num_fcn_layers: 1
     output_size: 1
 
 metrics:
-  valid_acc:
-    module: torchmetrics.classification.BinaryAccuracy
+  valid_r2:
+    module: torchmetrics.R2Score
     params:
-      threshold: 0.5
-  valid_f1:
-    module: torchmetrics.classification.BinaryF1Score
+      num_outputs: 1
+
+  valid_mse:
+    module: torchmetrics.MeanSquaredError
     params:
-      threshold: 0.5
+      squared: True
 
 criterion:
   L1:
-    module_name: torch.nn.BCEWithLogitsLoss
+    module_name: torch.nn.MSELoss
     weight: 1.
 
 datasets:
-  his_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/hic"
-  met_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/methyl"
-  clustering_file: "filies_to_clusters.csv"
+  hic_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/hic"
+  met_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/methyl/500kb"
+  clustering_file: "files_to_clusters.csv"
   resolution: 500000
   columns: ["hic", "meth_cg_500k", "cluster"]
 

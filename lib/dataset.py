@@ -23,4 +23,4 @@ class GraphDataset(Dataset):
     def sample_subgraph(graph, k_hop=10):
         idx = torch.randint(0, len(graph.x), (1,))
         nodes, edge_idx, _, _ = k_hop_subgraph(idx, k_hop, graph.edge_index, relabel_nodes=True)
-        return Data(edge_index=edge_idx, x=graph.x[nodes])
+        return Data(edge_index=edge_idx, x=graph.x[nodes], y=graph.y[nodes])

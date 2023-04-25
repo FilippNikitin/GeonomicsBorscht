@@ -36,12 +36,13 @@ if __name__ == "__main__":
     df = df.loc[:, dataset["columns"]]
     graphs = read_dataframe(df, dataset["hic_path"], dataset["met_path"], dataset["resolution"])
 
-    dataset = GraphDataset(graphs)
+    dataset = GraphDataset(graphs, k_hop=5, n_graphs=10**4)
 
     train_loader = DataLoader(dataset, batch_size=config_dict["trainer"]["batch_size"],
                               num_workers=8, pin_memory=True)
     val_loader = DataLoader(dataset, batch_size=config_dict["trainer"]["batch_size"],
                             num_workers=2, pin_memory=True)
+
     wandb.init(
         entity=config_dict["wandb"]["entity"],
         settings=wandb.Settings(start_method="fork"),

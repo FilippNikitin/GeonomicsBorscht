@@ -9,8 +9,11 @@ def read_hic_graph(meth_path, hic_path, resolution=50000):
                     "methylated_read_count", "total_read_count"]
     cell_data = pd.read_csv(meth_path, sep="\t", header=None, names=column_names)
     cell_data["bin_id"] = cell_data["bin_id"].str[3:].astype(int)
-    cell_data["methylated_read_count"].replace(".", 0, inplace=True)
-    cell_data["total_read_count"].replace(".", 0, inplace=True)
+    cell_data["methylated_read_count"] = pd.to_numeric(cell_data["methylated_read_count"],
+                                                       errors="coerce")
+    cell_data["total_read_count"] = pd.to_numeric(cell_data["total_read_count"],
+                                                  errors="coerce")
+    cell_data.fillna(0, inplace=True)
     column_names = ["num1", "left_chr", "left_pos", "num2", "num3",
                     "right_chr", "right_pos", "contact"]
     hic_data = pd.read_csv(hic_path, sep="\t", header=None, names=column_names)
@@ -46,11 +49,10 @@ def get_pyg_graph(hic, cell):
     met = torch.tensor(cell["methylated_read_count"].values.astype(float))
     tot = torch.tensor(cell["total_read_count"].values.astype(float))
     met[tot != 0] = met[tot != 0] / tot[tot != 0]
-    x = torch.arange(len(met))
+    x = torch.arange(len(met)).view(-1, 1)
     graph = Data(edge_index=edge_index,
                  edge_attr=edge_attr,
-                 x=x,
-                 y=met)
+                 x=x, y=met.float())
     return graph
 
 
@@ -72,5 +74,5 @@ if __name__ == "__main__":
     hic, cell = read_hic_graph(met_path, hic_path)
     hic, cell = join_graphs([[hic, cell], [hic, cell]])
     pyg = get_pyg_graph(hic, cell)
-    print(hic.head())
     print(pyg)
+

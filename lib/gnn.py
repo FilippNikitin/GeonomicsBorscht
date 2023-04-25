@@ -78,14 +78,15 @@ if __name__ == "__main__":
         [0, 0, 0, 0],
         [1, 2, 3, 4],
     ])
-    x_s = torch.randint(10, 12, (5, 2))  # 5 nodes.
+    x_s = torch.randint(10, 12, (5, 1))  # 5 nodes.
 
     edge_index_t = torch.tensor([
         [0, 0, 0],
         [1, 2, 3],
     ])
 
-    x_t = torch.randint(10, 12, (4, 2))  # 4 nodes.
+    x_t = torch.randint(10, 12, (4, 1))  # 4 nodes.
+
 
     gs = Data(x_s, edge_index_s, y=torch.tensor(0.1))
     gt = Data(x_t, edge_index_t, y=torch.tensor(0.3))
@@ -94,6 +95,5 @@ if __name__ == "__main__":
     loader = DataLoader(data_list, batch_size=2)
     batch = next(iter(loader))
 
-    model = NodePredictor([[0, 55], [0, 12]], [8, 8], 2)
-
+    model = NodePredictor([[0, 55], ], [8, ], 2)
     print(model(batch).shape)

@@ -45,7 +45,6 @@ class LitNodePredictor(pl.LightningModule):
             metrics[metric] = eval(metrics[metric]["module"])(**metrics[metric]["params"])
         metrics = nn.ModuleDict(metrics)
         self.metrics = metrics
-        self.best_metrics = {key: 0 for key in metrics}
         self.logged_complexity = False
         self.epoch_log = {}
         self.training_step_outputs = []
@@ -71,7 +70,6 @@ class LitNodePredictor(pl.LightningModule):
         result = {}
         output = self.network(batch)
         for metric_name in self.metrics:
-            print(output, print(batch))
             result[metric_name] = self.metrics[metric_name](output, batch.y)
         self.validation_step_outputs.append(result)
         return result
@@ -86,12 +84,6 @@ class LitNodePredictor(pl.LightningModule):
                     result[key] = [val_out[key].view(-1), ]
         for key in result:
             result[key] = torch.mean(torch.cat(result[key]))
-
-        for key in self.best_metrics:
-            if result[key] > self.best_metrics[key]:
-                self.best_metrics[key] = result[key]
-            metric_name = key.split("_")[-1]
-            result[f"best_{metric_name}"] = self.best_metrics[key]
 
         log = {**self.epoch_log, **result}
         wandb.log(log)

@@ -34,15 +34,20 @@ if __name__ == "__main__":
                              scheduler_params, metrics)
     df = pd.read_csv(dataset["clustering_file"])
     df = df.loc[:, dataset["columns"]]
-    graphs = read_dataframe(df, dataset["hic_path"], dataset["met_path"], dataset["resolution"])
+    graphs = read_dataframe(df, dataset["hic_path"], dataset["met_path"],
+                            dataset["resolution"], dataset["contact_percentile"])
+    test_dataset = GraphDataset({i: graphs[i] for i in dataset["test_clusters"]},
+                                k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"])
+    train_dataset = GraphDataset(
+        {i: graphs[i] for i in graphs if i not in dataset["test_clusters"]},
+        k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"])
 
-    dataset = GraphDataset(graphs, k_hop=5, n_graphs=10**4)
-
-    train_loader = DataLoader(dataset, batch_size=config_dict["trainer"]["batch_size"],
+    train_loader = DataLoader(train_dataset, batch_size=config_dict["trainer"]["batch_size"],
                               num_workers=8, pin_memory=True)
-    val_loader = DataLoader(dataset, batch_size=config_dict["trainer"]["batch_size"],
+    val_loader = DataLoader(test_dataset, batch_size=config_dict["trainer"]["batch_size"],
                             num_workers=2, pin_memory=True)
-
+    print(next(iter(val_loader)))
+    exit()
     wandb.init(
         entity=config_dict["wandb"]["entity"],
         settings=wandb.Settings(start_method="fork"),
@@ -50,7 +55,7 @@ if __name__ == "__main__":
         name=config_dict["wandb"]["run_name"],
         config=config_dict
     )
-    wandb.watch(model.network, log="all", log_freq=10000, log_graph=True)
+    wandb.watch(model.network, log="all", log_freq=1000, log_graph=True)
     del config_dict["trainer"]["batch_size"]
     trainer = Trainer(**config_dict["trainer"])
     if args.test:

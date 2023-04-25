@@ -1,21 +1,39 @@
-import torch
+import math
 
+import torch
 from torch import nn
 from torch_geometric.nn import GCNConv
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, max_len: int = 5000):
+        super().__init__()
+
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(max_len, d_model)
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        return x + self.pe[:x.size(0)]
 
 
 class Embedding(nn.Module):
     def __init__(self, vocab_ranges, embedding_sizes):
         super(Embedding, self).__init__()
         self.embeds = []
+        self.pos = []
         for vocab_range, embedding_size in zip(vocab_ranges, embedding_sizes):
             self.embeds.append(nn.Embedding(vocab_range[1] - vocab_range[0] + 2, embedding_size))
+            self.pos.append(PositionalEncoding(embedding_size, vocab_range[1] - vocab_range[0] + 2))
         self.embeds = nn.ModuleList(self.embeds)
 
     def forward(self, cat_features):
         res = []
-        for embed, cat_feat in zip(self.embeds, cat_features.T):
-            res.append(embed(cat_feat))
+        for embed, pos, cat_feat in zip(self.embeds, self.pos, cat_features.T):
+            res.append(pos(embed(cat_feat)))
         return torch.cat(res, dim=1)
 
 

@@ -2,7 +2,6 @@ import pandas as pd
 import torch
 
 from torch_geometric.data import Data
-from torch_geometric.utils import k_hop_subgraph
 
 
 def read_hic_graph(meth_path, hic_path, resolution=50000):
@@ -18,12 +17,14 @@ def read_hic_graph(meth_path, hic_path, resolution=50000):
     hic_data["left_start_pos"] = hic_data["left_pos"] // resolution * resolution
     hic_data["right_start_pos"] = hic_data["right_pos"] // resolution * resolution
     for part in ["left_", "right_"]:
-        hic_data = pd.merge(cell_data.add_prefix(part), hic_data, on=[f'{part}start_pos',  f'{part}chr'],
-                       how='inner')
+        hic_data = pd.merge(cell_data.add_prefix(part), hic_data,
+                            on=[f'{part}start_pos', f'{part}chr'],
+                            how='inner')
         hic_data.drop([f"{part}start_pos", f"{part}end_pos", f"{part}pos", f"{part}chr"], axis=1,
                       inplace=True)
     groups = hic_data.groupby(by=["left_bin_id", "right_bin_id"]).agg({"contact": "sum"})
-    cell_data = cell_data[["bin_id", "methylated_read_count", "total_read_count"]].set_index("bin_id")
+    cell_data = cell_data[["bin_id", "methylated_read_count", "total_read_count"]].set_index(
+        "bin_id")
     return groups, cell_data
 
 
@@ -53,22 +54,15 @@ def get_pyg_graph(hic, cell):
     return graph
 
 
-def sample_subgraph(graph, k_hop=10):
-    idx = torch.randint(0, len(graph.x), (1, ))
-    nodes, edge_idx, _, _ = k_hop_subgraph(idx, k_hop, graph.edge_index, relabel_nodes=True)
-    return Data(edge_index=edge_idx, x=graph.x[nodes])
-
-
-def read_dataframe(dataframe_path, hic_path, sc_path, resolution=50000):
-    df = pd.read_csv(dataframe_path)
+def read_dataframe(df, hic_path, sc_path, resolution=50000):
     graphs = {}
-
-    for i in pd.unique(df["idx"]):
-        selected = df[df["idx"] == i]
+    for i in pd.unique(df.iloc[:, -1]):
+        selected = df[df.iloc[:, -1] == i]
         data = []
-        for hic, sc in zip(selected["hic"], selected["sc"]):
-            data.append(read_hic_graph(f"{sc_path}/{sc}", f"{hic_path}/{hic}"), resolution)
-        graphs[i] = join_graphs(data)
+        for hic, sc in zip(selected.iloc[:, -0], selected.iloc[:, 1]):
+            data.append(read_hic_graph(f"{sc_path}/{sc}", f"{hic_path}/{hic}", resolution))
+        g = join_graphs(data)
+        graphs[i] = get_pyg_graph(*g)
     return graphs
 
 
@@ -80,4 +74,3 @@ if __name__ == "__main__":
     pyg = get_pyg_graph(hic, cell)
     print(hic.head())
     print(pyg)
-    print(sample_subgraph(pyg, 10))

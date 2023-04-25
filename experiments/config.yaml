@@ -31,14 +31,17 @@ metrics:
     params:
       threshold: 0.5
 
-
 criterion:
   L1:
     module_name: torch.nn.BCEWithLogitsLoss
     weight: 1.
 
-#datasets:
-
+datasets:
+  his_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/hic"
+  met_path: "/work/magroup/ruochiz/Data/scHiC_collection/m3c_mouse_brain/methyl"
+  clustering_file: "filies_to_clusters.csv"
+  resolution: 500000
+  columns: ["hic", "meth_cg_500k", "cluster"]
 
 
 optimization:

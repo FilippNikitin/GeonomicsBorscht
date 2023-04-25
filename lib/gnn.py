@@ -66,6 +66,8 @@ class NodePredictor(nn.Module):
         x = self.embed(batch.x)
         x = self.gcn(x, batch.edge_index)
         x = self.fcnn(x)
+        if x.shape[-1] == 1:
+            x = x[..., 0]
         return x
 
 

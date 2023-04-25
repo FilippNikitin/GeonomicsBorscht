@@ -1,0 +1,51 @@
+trainer:
+  max_epochs: 1000
+  #fast_dev_run: 5
+  default_root_dir: "workdir"
+  batch_size: 64
+  accelerator: "gpu"
+  gradient_clip_val: 0.01
+
+wandb:
+  project: "GenomicsBorscht"
+  run_name: "gcnn"
+  entity: "phill_nik"
+
+
+model:
+  module_name: NodePredictor
+  params:
+    h_dims: [64, ]
+    feat_ranges: [[0, 10000], ]
+    num_conv_layers: 10
+    num_fcn_layers: 1
+    output_size: 1
+
+metrics:
+  valid_acc:
+    module: torchmetrics.classification.BinaryAccuracy
+    params:
+      threshold: 0.5
+  valid_f1:
+    module: torchmetrics.classification.BinaryF1Score
+    params:
+      threshold: 0.5
+
+
+criterion:
+  L1:
+    module_name: torch.nn.BCEWithLogitsLoss
+    weight: 1.
+
+#datasets:
+
+
+
+optimization:
+  optimizer_module_name: torch.optim.Adam
+  optimizer_params:
+    lr: 0.0001
+  scheduler_module_name: torch.optim.lr_scheduler.CosineAnnealingLR
+  scheduler_params:
+    T_max: 1000
+    eta_min: 0.000002

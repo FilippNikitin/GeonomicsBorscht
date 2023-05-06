@@ -1,5 +1,5 @@
 trainer:
-  max_epochs: 1000
+  max_epochs: 100
   #fast_dev_run: 5
   default_root_dir: "workdir"
   batch_size: 16
@@ -8,17 +8,17 @@ trainer:
 
 wandb:
   project: "GenomicsBorscht"
-  run_name: "gcnn"
-  entity: "phill_nik"
+  run_name: "gcnn_pe_chr_new"
+  entity: "10701"
 
 model:
   module_name: NodePredictor
   params:
-    embed_sizes: [ 32, ]
-    h_dim: 64
-    feat_ranges: [ [ 0, 5257 ], ]
-    num_conv_layers: 4
-    num_fcn_layers: 2
+    embed_sizes: [ 64, 4]
+    h_dim: 256
+    feat_ranges: [ [ 0, 5257 ], [0, 25]]
+    num_conv_layers: 6
+    num_fcn_layers: 3
     output_size: 1
 
 metrics:
@@ -47,7 +47,7 @@ datasets:
   contact_quantile: 0.5
   k_hop: 10
   n_graphs: 10000
-  graph_path: "graphs_new_clustering.pkl"
+  graph_path: "graphs_chr_full.pkl"
 
 optimization:
   optimizer_module_name: torch.optim.Adam

@@ -8,7 +8,7 @@ trainer:
 
 wandb:
   project: "GenomicsBorscht"
-  run_name: "gcnn_pe_chr_new"
+  run_name: "gcnn_pe_chr"
   entity: "10701"
 
 model:
@@ -44,8 +44,8 @@ datasets:
   resolution: 500000
   columns: [ "hic", "meth_cg_500k", "cluster_label" ]
   test_clusters: [ "DG", "MGC" ]
-  contact_quantile: 0.5
-  k_hop: 10
+  contact_quantile: 0.8
+  k_hop: 5
   n_graphs: 10000
   graph_path: "graphs_chr_full.pkl"
 

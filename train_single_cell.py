@@ -6,10 +6,12 @@ import pandas as pd
 import wandb
 import yaml
 from lightning import Trainer
-from torch_geometric.data import DataLoader
+from torch_geometric.data import DataLoader, Dataset
+
+from torch.utils.data import random_split
 
 from lib.dataset import GraphDataset
-from lib.graph import read_aggregated
+from lib.graph import read_single_cell
 from lib.llightning_model import LitNodePredictor
 
 if __name__ == "__main__":
@@ -39,23 +41,16 @@ if __name__ == "__main__":
     if os.path.exists(dataset["graph_path"]):
         graphs = pickle.load(open(dataset["graph_path"], "rb"))
     else:
-        graphs = read_aggregated(df, dataset["hic_path"], dataset["met_path"],
+        graphs = read_single_cell(df, dataset["hic_path"], dataset["met_path"],
                                  dataset["resolution"])
         pickle.dump(graphs, open(dataset["graph_path"], "wb"))
-
-    test_dataset = GraphDataset({i: graphs[i] for i in dataset["test_clusters"]},
-                                k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"],
-                                quantile=dataset["contact_quantile"])
-    train_dataset = GraphDataset(
-        {i: graphs[i] for i in graphs if i not in dataset["test_clusters"]},
-        k_hop=dataset["k_hop"], n_graphs=dataset["n_graphs"],
-        quantile=dataset["contact_quantile"])
+    p = dataset["test_ratio"]
+    test_dataset, train_dataset = random_split(graphs, [p, 1-p])
 
     train_loader = DataLoader(train_dataset, batch_size=config_dict["trainer"]["batch_size"],
                               num_workers=8, pin_memory=True)
     val_loader = DataLoader(test_dataset, batch_size=config_dict["trainer"]["batch_size"],
                             num_workers=2, pin_memory=True)
-    print(next(iter(val_loader)))
     wandb.init(
         entity=config_dict["wandb"]["entity"],
         settings=wandb.Settings(start_method="fork"),

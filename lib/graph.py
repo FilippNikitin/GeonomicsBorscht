@@ -54,10 +54,10 @@ def get_pyg_graph(hic, cell):
     met = torch.tensor(cell["methylated_read_count"].values.astype(float))
     tot = torch.tensor(cell["total_read_count"].values.astype(float))
     met[tot != 0] = met[tot != 0] / tot[tot != 0]
+    met[tot == 0] = -1
     data = cell.reset_index()
     x = np.c_[data["bin_id"], data["chr"]]
     x = torch.from_numpy(x).long()
-    #x = torch.arange(len(met)).view(-1, 1).long()
     graph = Data(edge_index=edge_index,
                  edge_attr=edge_attr,
                  x=x, y=met.float())
@@ -67,20 +67,36 @@ def get_pyg_graph(hic, cell):
 def process_df(args):
     data = []
     selected, hic_path, sc_path, resolution = args
-    for hic, sc in zip(selected.iloc[:, -0], selected.iloc[:, 1]):
+    for hic, sc in zip(selected.iloc[:, 0], selected.iloc[:, 1]):
         data.append(read_hic_graph(f"{sc_path}/{sc}", f"{hic_path}/{hic}", resolution))
     g = join_graphs(data)
-    # threshold = np.percentile(g[0]["contact"], percentile)
-    # hic = g[0][g[0]["contact"] > threshold]
     return get_pyg_graph(*g)
 
 
-def read_dataframe(df, hic_path, sc_path, resolution=50000):
+def read_aggregated(df, hic_path, sc_path, resolution=50000):
     dfs = [df[df.iloc[:, -1] == i] for i in sorted(pd.unique(df.iloc[:, -1]))]
     pool = Pool()
     args = [[i, hic_path, sc_path, resolution] for i in dfs]
     graphs = pool.map(process_df, args)
     return dict(zip(sorted(pd.unique(df.iloc[:, -1])), graphs))
+
+
+def read_hic_graph_wrapper(args):
+    return read_hic_graph(*args)
+
+
+def get_pyg_graph_wrapper(args):
+    return get_pyg_graph(*args)
+
+
+def read_single_cell(df, hic_path, sc_path, resolution=50000):
+    paths = list(zip(df.iloc[:, 0].values, df.iloc[:, 1].values))
+    args = [(f"{sc_path}/{sc}", f"{hic_path}/{hic}", resolution) for (hic, sc) in paths]
+    pool = Pool()
+    graphs = pool.map(read_hic_graph_wrapper, args)
+    pool = Pool()
+    graphs = pool.map(get_pyg_graph_wrapper, graphs)
+    return graphs
 
 
 if __name__ == "__main__":

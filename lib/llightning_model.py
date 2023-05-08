@@ -10,7 +10,7 @@ from lib import gnn
 
 
 class Criterion(nn.Module):
-    def __init__(self, criterion_dict):
+    def __init__(self, criterion_dict, ignore_index=-1):
         super().__init__()
         criteria = []
         weights = []
@@ -21,9 +21,13 @@ class Criterion(nn.Module):
             weights.append(criterion_dict[criterion]["weight"])
         self.criteria = criteria
         self.weights = weights
+        self.ignore_index = ignore_index
 
     def forward(self, predicted, target):
         loss = 0
+        mask = target != self.ignore_index
+        predicted = predicted[mask]
+        target = target[mask]
         for criterion, weight in zip(self.criteria, self.weights):
             loss += criterion(predicted, target) * weight
         return loss
@@ -36,7 +40,8 @@ class LitNodePredictor(pl.LightningModule):
         self.save_hyperparameters()
         network_module = getattr(gnn, network_module)
         self.network = network_module(**network_params)
-        self.criterion = Criterion(criterion_dict=criterion)
+        self.ignore_index = -1
+        self.criterion = Criterion(criterion_dict=criterion, ignore_index=self.ignore_index)
         optimizer_module = eval(optimizer_module)
         self.optimizer = optimizer_module(self.network.parameters(), **optimizer_params)
         scheduler_module = eval(scheduler_module)
@@ -69,8 +74,11 @@ class LitNodePredictor(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         result = {}
         output = self.network(batch)
+        mask = batch.y != self.ignore_index
+        pred = output[mask]
+        tgt = batch.y[mask]
         for metric_name in self.metrics:
-            result[metric_name] = self.metrics[metric_name](output, batch.y)
+            result[metric_name] = self.metrics[metric_name](pred, tgt)
         self.validation_step_outputs.append(result)
         return result
 
@@ -83,7 +91,7 @@ class LitNodePredictor(pl.LightningModule):
                 else:
                     result[key] = [val_out[key].view(-1), ]
         for key in result:
-            result[key] = torch.mean(torch.cat(result[key]))
+            result[key] = torch.max(0, torch.mean(torch.cat(result[key])))
 
         log = {**self.epoch_log, **result}
         wandb.log(log)

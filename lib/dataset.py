@@ -1,12 +1,12 @@
 import numpy as np
 import torch
-from torch.utils.data import Dataset
 from torch_geometric.data import Data
 from torch_geometric.utils import k_hop_subgraph
+from torch.utils.data import Dataset
 
 
 class GraphDataset(Dataset):
-    def __init__(self, graphs, k_hop=10, n_graphs=10 ** 6, quantile=0.5):
+    def __init__(self, graphs, k_hop=10, n_graphs=10**6, quantile=0.5):
         self.graphs = graphs
         self.k_hop = k_hop
         self.n_graphs = n_graphs

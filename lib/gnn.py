@@ -17,23 +17,30 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        return x + self.pe[:x.size(0)]
+        return self.pe[x.long()]
 
 
 class Embedding(nn.Module):
     def __init__(self, vocab_ranges, embedding_sizes):
         super(Embedding, self).__init__()
-        self.embeds = []
-        self.pos = []
+        embeds = []
+        p = False
         for vocab_range, embedding_size in zip(vocab_ranges, embedding_sizes):
-            self.embeds.append(nn.Embedding(vocab_range[1] - vocab_range[0] + 2, embedding_size))
-            self.pos.append(PositionalEncoding(embedding_size, vocab_range[1] - vocab_range[0] + 2))
-        self.embeds = nn.ModuleList(self.embeds)
+            embeds.append(nn.Embedding(vocab_range[1] - vocab_range[0] + 2, embedding_size))
+            if not p:
+                self.pos = PositionalEncoding(embedding_size, vocab_range[1] - vocab_range[0] + 2)
+                p = True
+        self.embeds = nn.ModuleList(embeds)
 
     def forward(self, cat_features):
         res = []
-        for embed, pos, cat_feat in zip(self.embeds, self.pos, cat_features.T):
-            res.append(pos(embed(cat_feat)))
+        p = False
+        for embed , cat_feat in zip(self.embeds, cat_features.T):
+            e = embed(cat_feat)
+            if not p:
+                p = True
+                e += self.pos(cat_feat)
+            res.append(e)
         return torch.cat(res, dim=1)
 
 

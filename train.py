@@ -35,7 +35,7 @@ if __name__ == "__main__":
                              optimizer_module, optimizer_params, scheduler_module,
                              scheduler_params, metrics)
     df = pd.read_csv(dataset["clustering_file"])
-    df = df.loc[:300, dataset["columns"]]
+    df = df.loc[:, dataset["columns"]]
     if os.path.exists(dataset["graph_path"]):
         graphs = pickle.load(open(dataset["graph_path"], "rb"))
     else:

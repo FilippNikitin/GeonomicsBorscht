@@ -29,8 +29,9 @@ def read_hic_graph(meth_path, hic_path, resolution=50000):
         hic_data.drop([f"{part}start_pos", f"{part}end_pos", f"{part}pos", f"{part}chr"], axis=1,
                       inplace=True)
     groups = hic_data.groupby(by=["left_bin_id", "right_bin_id"]).agg({"contact": "sum"})
-    cell_data = cell_data[["bin_id", "methylated_read_count", "total_read_count"]].set_index(
-        "bin_id")
+    cell_data["chr"] = cell_data["chr"].astype("category").cat.codes
+    cell_data = cell_data[["chr", "bin_id", "methylated_read_count", "total_read_count"]].set_index(
+        ["bin_id", "chr"])
     return groups, cell_data
 
 
@@ -53,7 +54,10 @@ def get_pyg_graph(hic, cell):
     met = torch.tensor(cell["methylated_read_count"].values.astype(float))
     tot = torch.tensor(cell["total_read_count"].values.astype(float))
     met[tot != 0] = met[tot != 0] / tot[tot != 0]
-    x = torch.arange(len(met)).view(-1, 1)
+    data = cell.reset_index()
+    x = np.c_[data["bin_id"], data["chr"]]
+    x = torch.from_numpy(x).long()
+    #x = torch.arange(len(met)).view(-1, 1).long()
     graph = Data(edge_index=edge_index,
                  edge_attr=edge_attr,
                  x=x, y=met.float())
